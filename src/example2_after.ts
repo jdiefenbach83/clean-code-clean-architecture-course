@@ -1,68 +1,45 @@
 export default class CPF {
-
-    validate(cpf: string) {
-        if (!this.shouldValidate(cpf)) {
+    validate(rawCpf: string | null | undefined) {
+        if (!rawCpf) {
             return false;
         }
 
-        cpf = cpf
-            .replace('.','')
-            .replace('.','')
-            .replace('-','')
-            .replace(" ","");  
+        const cpf = this.cleanCPF(rawCpf);
         
-        if (cpf.split("").every(c => c === cpf[0])){
+        if (cpf.length !== 11){
+            return false;
+        } 
+
+        if (this.areDigitsEquals(cpf)){
             return false;
         }
 
-        try{  
-            let d1, d2;
-            let dg1, dg2, rest;
-            let digito;
-            let nDigResult;
-            d1 = d2 = 0;
-            dg1 = dg2 = rest = 0;
-                
-            for (let nCount = 1; nCount < cpf.length -1; nCount++) {
-                digito = parseInt(cpf.substring(nCount -1, nCount));
-                d1 = d1 + ( 11 - nCount ) * digito;    
-                d2 = d2 + ( 12 - nCount ) * digito;                
-            };  
-                
-            rest = (d1 % 11);
-    
-            dg1 = (rest < 2) ? dg1 = 0 : 11 - rest;
-            d2 += 2 * dg1;  
-            rest = (d2 % 11);  
-            if (rest < 2)  
-                dg2 = 0;  
-            else  
-                dg2 = 11 - rest;  
-    
-            let nDigVerific = cpf.substring(cpf.length-2, cpf.length);  
-            nDigResult = "" + dg1 + "" + dg2;  
-            
-            return nDigVerific == nDigResult;
-        } catch (e){  
-            console.error("Erro !"+e);  
-
-            return false;  
-        }
+        const firstVerifierDigit = this.calculateDigit(cpf, 10);
+        const secondVerifierDigit = this.calculateDigit(cpf, 11);       
+        const verifierDigit = this.extractVerifierDigit(cpf);
+        const calculatedVerifierDigit = parseInt(`${firstVerifierDigit}${secondVerifierDigit}`);  
+        return verifierDigit === calculatedVerifierDigit;
     }
 
-    shouldValidate(cpf: string): boolean {
-        if (cpf === null) {
-            return false;
-        }
+    cleanCPF(cpf: string): string {
+        return cpf.replace(/\D/g, ''); 
+    }
 
-        if (cpf === undefined) {
-            return false;
-        }
+    areDigitsEquals(cpf: string) :boolean {
+        return (cpf.split("").every(c => c === cpf[0]));            
+    }
+
+    calculateDigit(cpf: string, factor: number): number {
+        let total = 0;
         
-        if (cpf.length < 11 || cpf.length > 14){
-            return false;
+        for (const digit of cpf) {
+            if (factor > 1) total += parseInt(digit) * factor--;
         }
+        const rest = total%11;
+        return (rest < 2) ? 0: (11 - rest);
+    }
 
-        return true;
+    extractVerifierDigit(cpf: string): number {
+        return parseInt(cpf.slice(9))
     }
 }
